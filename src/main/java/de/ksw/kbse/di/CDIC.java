@@ -19,6 +19,10 @@ import javax.inject.Qualifier;
 public class CDIC {
 
     public Object init(Class clazz) {
+        return inject(clazz);
+    }
+
+    private static Object inject(Class clazz) throws SecurityException {
         Object object = new Object();
         try {
             object = clazz.newInstance();
