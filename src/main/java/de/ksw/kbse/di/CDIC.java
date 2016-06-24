@@ -18,32 +18,64 @@ import javax.inject.Qualifier;
  */
 public class CDIC {
 
-    public Object init(Class clazz) {
-        return inject(clazz);
+    private static void simpleInjection(Object object, Field field) {
+        Object fieldInstance;
+        if (field.getType().isInterface()) {
+            // In ClassPath nach entsprechenden Implementierungen suchen
+        } else {
+            try {
+                fieldInstance = field.getType().newInstance();
+            } catch (InstantiationException ex) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " besitzt keinen Default-Konstruktor!", ex);
+                return;
+            } catch (IllegalAccessException ex) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " besitzt keinen public Default-Konstruktor!", ex);
+                // Hier könnten wir noch prüfen ob das Objekt über eine
+                // getInstance() Methode verfügt und diese entsprechend aufrufen.
+                return;
+            }
+
+            try {
+                field.setAccessible(true);
+                field.set(object, fieldInstance);
+            } catch (IllegalArgumentException ex) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Feld " + field.getName() + " ist kein Objekt!", ex);
+            } catch (IllegalAccessException ex) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Feld " + field.getName() + " ist nicht zugreifbar!", ex);
+            } finally {
+                field.setAccessible(false);
+            }
+
+            inject(fieldInstance);
+        }
     }
 
-    private static Object inject(Class clazz) throws SecurityException {
-        Object object = new Object();
+    public <T> T init(Class clazz) {
+        T object;
         try {
-            object = clazz.newInstance();
+            object = (T) clazz.newInstance();
         } catch (InstantiationException ex) {
             Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Klasse " + clazz.getName() + " besitzt keinen Default-Konstruktor!", ex);
+            return null;
         } catch (IllegalAccessException ex) {
             Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Konstruktor ist private...", ex);
             // TODO: getInstance() Methode versuchen aufzurufen
-            return object;
+            return null;
         }
+        return inject(object);
+    }
 
+    private static <T> T inject(T object) throws SecurityException {
         // Prüfen ob Injection Points vorhanden sind und entsprechende Injections durchführen.
         Field[] declaredFields = object.getClass().getDeclaredFields();
         for (Field field : declaredFields) {
             if (field.isAnnotationPresent(Inject.class)) {
-                if(field.isAnnotationPresent(Named.class)) {
-                    NamedInjector.inject(object, field);
-                } else if(field.isAnnotationPresent(Qualifier.class)) {
-                    QualifierInjector.inject(object, field);
+                if (field.isAnnotationPresent(Named.class)) {
+
+                } else if (field.isAnnotationPresent(Qualifier.class)) {
+
                 } else {
-                    Injector.inject(object, field);
+                    simpleInjection(object, field);
                 }
             }
         }
