@@ -1,0 +1,25 @@
+In der Beispielanwendung müssen generell folgende Annotationen verwendet werden:
+
+-@Inject
+-@Named
+-@Qualifiert
+
+Folgendes sollte im Code vorhanden sein um möglichst alle Fälle testen zu können:
+
+-Ein mit @Inject annotiertes Attribut
+-Eine mit @Inject annotierte Methode
+-Ein mit @Inject annotierter Konstruktor
+-Ein mit @Inject annotiertes Attribut, das wiederum zu injizierende Attribute enthält
+
+-Ein mit @Inject und @Named annotiertes Attribut ohne Übergabeparameter
+-Ein mit @Inject und @Named annotiertes Attribut mit Übergabeparameter
+-Ein mit @Inject und @Named annotiertes Attribut mit Übergabeparameter, das wiederum zu injiziierende Attribute enthält
+-Ein mit ausschließlich @Named annotiertes Attribut (Fehler)
+-Eine Klasse, die mit @Named annotiert ist
+-Mehrere Klassen, die mit @Named annotiert sind (Fehler)
+
+-Verschiedene Interfaces als Qualifiers (z.B. BMW, Ford ...), ein weiteres Interface (z.B. Auto) und die jeweils zugehörigen Implementierungen (z.B. BMWImpl ...), die mit entsprechendem Qualifiert annotiert sind
+-Ein mit @Inject und dem Qualifier annotiertes Attribut 
+-Ein mit ausschließich dem Qualifier annotiertes Attribut (Fehler)
+-Eine zu injiziierende Methode (z.B. Setter), deren Übergabeparameter mit einem Qualifier annotiert ist
+-ggf. einen Qualifier mit einem type Attribut
