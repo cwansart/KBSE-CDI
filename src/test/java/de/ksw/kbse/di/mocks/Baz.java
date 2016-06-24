@@ -5,10 +5,11 @@
  */
 package de.ksw.kbse.di.mocks;
 
-/**
- *
- * @author Christian
- */
+import javax.inject.Inject;
+
 public class Baz {
+
+    @Inject
+    public Boo boo;
     public String name = "Baz";
 }

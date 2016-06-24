@@ -22,6 +22,7 @@ public class CDIC {
         Object fieldInstance;
         if (field.getType().isInterface()) {
             // In ClassPath nach entsprechenden Implementierungen suchen
+            
         } else {
             try {
                 fieldInstance = field.getType().newInstance();
