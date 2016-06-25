@@ -6,6 +6,7 @@
 package de.ksw.kbse.di.mocks;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  *
@@ -15,4 +16,12 @@ public class Foo {
 
     @Inject
     public Baz baz;
+    
+    @Inject
+    @Named("namedClass")
+    public Object namedClass;
+    
+    @Inject
+    @MyQualifier
+    public Object qualifiedClass;
 }
