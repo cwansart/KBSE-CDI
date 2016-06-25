@@ -17,6 +17,8 @@ import javax.inject.Qualifier;
  * @author Larr
  */
 public class CDIC {
+    
+    private ClassIndexer classIndexer;
 
     private static void simpleInjection(Object object, Field field) {
         Object fieldInstance;
@@ -52,6 +54,8 @@ public class CDIC {
     }
 
     public <T> T init(Class clazz) {
+        classIndexer = new ClassIndexer(clazz);
+        
         T object;
         try {
             object = (T) clazz.newInstance();
