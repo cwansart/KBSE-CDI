@@ -27,9 +27,9 @@ public class ClassIndexer {
     /*
      * Lists for indexing all class files.
      */
-    private final List<Class> interfaceInjectionPoints = new ArrayList<>();
-    private final Map<String, Class> namedInjectionPoints = new HashMap<>();
-    private final Map<String, Class> qualifierInjectionPoints = new HashMap<>();
+    private final List<String> interfaceInjectionPoints = new ArrayList<>();
+    private final List<String> namedInjectionPoints = new ArrayList<>();
+    private final List<String> qualifierInjectionPoints = new ArrayList<>();
 
     /*
      * Maps with the default implementations.
@@ -57,18 +57,17 @@ public class ClassIndexer {
         Field[] declaredFields = clazz.getDeclaredFields();
         for (Field field : declaredFields) {
             if (field.isAnnotationPresent(Inject.class)) {
-
                 if (field.getType().isInterface()) {
-                    interfaceInjectionPoints.add(clazz);
+                    interfaceInjectionPoints.add(field.getType().getName());
                 } else if (field.isAnnotationPresent(Named.class)) {
                     String namedValue = field.getAnnotation(Named.class).value();
-                    namedInjectionPoints.put(namedValue, clazz);
+                    namedInjectionPoints.add(namedValue);
                 } else {
                     java.lang.annotation.Annotation[] annotations = field.getAnnotations();
                     for (java.lang.annotation.Annotation annotation : annotations) {
                         Class annotationType = annotation.annotationType();
                         if (annotationType.isAnnotationPresent(Qualifier.class)) {
-                            qualifierInjectionPoints.put(annotationType.getName(), annotationType);
+                            qualifierInjectionPoints.add(annotationType.getName());
                         }
                     }
                 }
@@ -118,10 +117,11 @@ public class ClassIndexer {
             CtClass loadedClass = ClassPool.getDefault().makeClass(new FileInputStream(file));
             ClassFile classFile = loadedClass.getClassFile();
             AnnotationsAttribute attribute = (AnnotationsAttribute) classFile.getAttribute(AnnotationsAttribute.visibleTag);
-            if (classFile.isInterface()) {
-                processInterface(classFile, file);
-            } else if (attribute != null) {
+
+            if (attribute != null) {
                 processAnnotations(attribute, file);
+            } else {
+                processInterface(classFile, file);
             }
         } catch (FileNotFoundException ex) {
             Logger.getLogger(ClassIndexer.class.getName()).log(Level.SEVERE, "class-Datei konnte nicht gefunden werden!", ex);
@@ -136,16 +136,21 @@ public class ClassIndexer {
      * Checks if the given interface/ClassFile is indexed and adds it to the
      * interfaceImplementation list.
      *
-     * @param classFile the interface
+     * @param interfaceName the interface
      * @param file the current file
      * @throws RuntimeException if the interface is ambiguous
      */
     private void processInterface(ClassFile classFile, File file) throws RuntimeException {
-        // This is the case, when there are not annotations available.
-        if (interfaceImplementations.containsKey(classFile.getName())) {
-            throw new RuntimeException("Interface-Implementierung für " + classFile.getName() + " ist nicht eindeutig!");
+        String[] interfaces = classFile.getInterfaces();
+        for (String iface : interfaces) {
+            if (interfaceInjectionPoints.contains(iface)) {
+                if (interfaceImplementations.containsKey(iface)) {
+                    throw new RuntimeException("Interface-Implementierung für " + iface + " ist nicht eindeutig!");
+                }
+
+                interfaceImplementations.put(iface, file);
+            }
         }
-        interfaceImplementations.put(classFile.getName(), file);
     }
 
     /**
@@ -168,8 +173,10 @@ public class ClassIndexer {
                 if (namedImplementations.containsKey(namedValue)) {
                     throw new RuntimeException("Named-Implementierung für " + namedValue + " ist nicht eindeutig!");
                 }
-                namedImplementations.put(namedValue, file);
-            } else if (qualifierInjectionPoints.containsKey(typeName)) {
+                if (namedInjectionPoints.contains(namedValue)) {
+                    namedImplementations.put(namedValue, file);
+                }
+            } else if (qualifierInjectionPoints.contains(typeName)) {
                 if (qualifierImplementations.containsKey(typeName)) {
                     throw new RuntimeException("Qualifier-Implementierung für " + typeName + " ist nicht eindeutig!");
                 }

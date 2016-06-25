@@ -18,6 +18,9 @@ public class Foo {
     public Baz baz;
     
     @Inject
+    public Bar bar;
+    
+    @Inject
     @Named("namedClass")
     public Object namedClass;
     
