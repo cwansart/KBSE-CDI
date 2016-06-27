@@ -27,8 +27,8 @@ public class CDIC {
 
     private ClassIndexer classIndexer;
 
-    private void simpleInjection(Object object, Field field) {
-        Object fieldInstance;
+    private <T> void simpleInjection(Object object, Field field) {
+        T fieldInstance;
         Class clazz;
 
         if (field.getType().isInterface()) {
@@ -42,6 +42,15 @@ public class CDIC {
         setField(field, object, fieldInstance);
         inject(fieldInstance);
 
+    }
+
+    private <T> void qualifierInjection(T object, Field field, Annotation annotation) {
+//        ClassInfo qualifierFile = classIndexer.getQualifierFile(annotation.annotationType().getTypeName());
+//        Class clazz = loadClass(qualifierFile);
+//        
+//        T fieldInstance = newInstance(clazz, field.getType());
+//        setField(field, object, fieldInstance);
+//        inject(fieldInstance);
     }
 
     private <T> T newInstance(Class clazz, Class fieldType) {
@@ -68,12 +77,6 @@ public class CDIC {
             }
         }
         return fieldInstance;
-    }
-
-    private <T> void qualifierInjection(T object, Field field, Annotation annotation) {
-        ClassInfo qualifierFile = classIndexer.getQualifierFile(annotation.annotationType().getTypeName());
-        Class type = loadClass(qualifierFile);
-        //inject(fieldInstance);
     }
 
     public <T> T init(Class clazz) {
