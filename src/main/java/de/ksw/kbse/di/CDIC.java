@@ -44,17 +44,17 @@ public class CDIC {
 
     }
 
-    private Object newInstance(Class clazz, Class fieldType) {
-        Object fieldInstance = null;
+    private <T> T newInstance(Class clazz, Class fieldType) {
+        T fieldInstance = null;
         try {
-            fieldInstance = clazz.newInstance();
+            fieldInstance = (T) clazz.newInstance();
         } catch (InstantiationException ex) {
             Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, fieldType.getName() + " besitzt keinen Default-Konstruktor!", ex);
 
         } catch (IllegalAccessException ex) {
             try {//Prüfen ob getInstance verfügbar ist und wenn möglich aufrufen.
                 Method getInstanceMethod = fieldType.getMethod("getInstance");
-                fieldInstance = getInstanceMethod.invoke(null);
+                fieldInstance = (T) getInstanceMethod.invoke(null);
             } catch (NoSuchMethodException ex1) {
                 Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, fieldType.getName() + " besitzt keinen public Default-Konstruktor!", ex1);
             } catch (SecurityException ex1) {
