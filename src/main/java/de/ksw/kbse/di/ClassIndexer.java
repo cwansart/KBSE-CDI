@@ -188,7 +188,7 @@ public class ClassIndexer {
                 if (qualifierImplementations.containsKey(typeName)) {
                     throw new RuntimeException("Qualifier-Implementierung für " + typeName + " ist nicht eindeutig!");
                 }
-                ClassInfo classInfo = new ClassInfo(typeName, currentClassPath, file);
+                ClassInfo classInfo = new ClassInfo(classFile.getName(), currentClassPath, file);
                 qualifierImplementations.put(typeName, classInfo);
             }
         }
