@@ -1,6 +1,7 @@
 package de.ksw.kbse.di;
 
 import de.ksw.kbse.di.mocks.BarImpl;
+import de.ksw.kbse.di.mocks.Boo;
 import de.ksw.kbse.di.mocks.Foo;
 import de.ksw.kbse.di.mocks.NamedClass;
 import de.ksw.kbse.di.mocks.QualifiedClass;
@@ -59,11 +60,23 @@ public class CDICTest {
         System.out.println("Test if Baz' qualified field qualifiedClass is of type QualifiedClass");
         assertTrue(foo.qualifiedClass instanceof QualifiedClass);
     }
-    
+
     @Test
     public void testIfTypeOfNamedField() {
         System.out.println("Test if Baz' named field namedClass is of type NamedClass");
         assertTrue(foo.namedClass instanceof NamedClass);
+    }
+
+    @Test
+    public void testConstrcutorInjectionNotNull() {
+        System.out.println("Test if Baa's constructor injection not null");
+        assertTrue(foo.baa.boo != null);
+    }
+
+    @Test
+    public void testConstrcutorInjection() {
+        System.out.println("Test if Baa's constructor injection works");
+        assertTrue(foo.baa.boo instanceof Boo);
     }
 
     @Test

@@ -7,12 +7,14 @@ package de.ksw.kbse.di;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.inject.Inject;
@@ -65,8 +67,8 @@ public class CDIC {
         try {
             fieldInstance = (T) clazz.newInstance();
         } catch (InstantiationException ex) {
-            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, fieldType.getName() + " besitzt keinen Default-Konstruktor!", ex);
-
+            //Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, fieldType.getName() + " besitzt keinen Default-Konstruktor!", ex);
+            fieldInstance = constructorInjection(clazz);
         } catch (IllegalAccessException ex) {
             try {//Prüfen ob getInstance verfügbar ist und wenn möglich aufrufen.
                 Method getInstanceMethod = fieldType.getMethod("getInstance");
@@ -93,18 +95,46 @@ public class CDIC {
         try {
             object = (T) clazz.newInstance();
         } catch (InstantiationException ex) {
-            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Klasse " + clazz.getName() + " besitzt keinen Default-Konstruktor!", ex);
-            return null;
+            //Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Klasse " + clazz.getName() + " besitzt keinen Default-Konstruktor!", ex);
+            object = constructorInjection(clazz);
+            if (object == null) {
+                return null;
+            }
         } catch (IllegalAccessException ex) {
             Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Konstruktor ist private...", ex);
-            // TODO: getInstance() Methode versuchen aufzurufen
             return null;
         }
         return inject(object);
     }
 
+    public <T> T constructorInjection(Class clazz) {
+        T object = null;
+        Constructor[] constructors = clazz.getConstructors();
+        for (Constructor constructor : constructors) {
+            if (constructor.isAnnotationPresent(Inject.class)) {
+                try {
+                    Parameter[] parameters = constructor.getParameters();
+                    Object[] params = new Object[constructor.getParameterCount()];
+                    for (int i = 0; i < params.length; i++) {
+                        params[i] = parameters[i].getType().newInstance();
+                    }
+                    object = (T) constructor.newInstance(params);
+                } catch (InstantiationException ex) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IllegalAccessException ex) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IllegalArgumentException ex) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (InvocationTargetException ex) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+        return object;
+    }
+
     private <T> T inject(T object) throws SecurityException {
-        // Prüfen ob Injection Points vorhanden sind und entsprechende Injections durchführen.
+        // Injecting fields
         Field[] declaredFields = object.getClass().getDeclaredFields();
         for (Field field : declaredFields) {
             if (field.isAnnotationPresent(Inject.class)) {

@@ -15,15 +15,18 @@ import javax.inject.Named;
 public class Foo {
 
     @Inject
+    public Baa baa;
+
+    @Inject
     public Baz baz;
-    
+
     @Inject
     public Bar bar;
-    
+
     @Inject
     @Named("namedClass")
     public Object namedClass;
-    
+
     @Inject
     @MyQualifier
     public Object qualifiedClass;
