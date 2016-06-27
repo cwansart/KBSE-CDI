@@ -125,7 +125,7 @@ public class ClassIndexer {
             AnnotationsAttribute attribute = (AnnotationsAttribute) classFile.getAttribute(AnnotationsAttribute.visibleTag);
             
             if (attribute != null) {
-                processAnnotations(attribute, file);
+                processAnnotations(classFile, attribute, file);
             } else {
                 processInterface(classFile, file);
             }
@@ -168,7 +168,7 @@ public class ClassIndexer {
      * @param file
      * @throws RuntimeException
      */
-    private void processAnnotations(AnnotationsAttribute attribute, File file) throws RuntimeException {
+    private void processAnnotations(ClassFile classFile, AnnotationsAttribute attribute, File file) throws RuntimeException {
         Annotation[] annotations = attribute.getAnnotations();
 
         // First we need to check if the class is annotated with
@@ -181,7 +181,7 @@ public class ClassIndexer {
                     throw new RuntimeException("Named-Implementierung für " + namedValue + " ist nicht eindeutig!");
                 }
                 if (namedInjectionPoints.contains(namedValue)) {
-                    ClassInfo classInfo = new ClassInfo(namedValue, currentClassPath, file);
+                    ClassInfo classInfo = new ClassInfo(classFile.getName(), currentClassPath, file, namedValue);
                     namedImplementations.put(namedValue, classInfo);
                 }
             } else if (qualifierInjectionPoints.contains(typeName)) {
