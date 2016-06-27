@@ -28,9 +28,7 @@ public class CDIC {
     private ClassIndexer classIndexer;
 
     private <T> void simpleInjection(Object object, Field field) {
-        T fieldInstance;
         Class clazz;
-
         if (field.getType().isInterface()) {
             ClassInfo classInfo = classIndexer.getInterfaceFile(field.getType().getName());
             clazz = loadClass(classInfo);
@@ -38,16 +36,25 @@ public class CDIC {
             clazz = field.getType();
         }
 
-        fieldInstance = newInstance(clazz, field.getType());
-        setField(field, object, fieldInstance);
-        inject(fieldInstance);
-
+        injectField(clazz, field, object);
     }
 
     private <T> void qualifierInjection(T object, Field field, Annotation annotation) {
         ClassInfo qualifierFile = classIndexer.getQualifierFile(annotation.annotationType().getTypeName());
         Class clazz = loadClass(qualifierFile);
 
+        injectField(clazz, field, object);
+    }
+
+    private <T> void namedInjection(T object, Field field) {
+        Named annotation = field.getAnnotation(Named.class);
+        ClassInfo namedFile = classIndexer.getNamedFile(annotation.value());
+        Class clazz = loadClass(namedFile);
+
+        injectField(clazz, field, object);
+    }
+
+    private <T> void injectField(Class clazz, Field field, T object) throws SecurityException {
         T fieldInstance = newInstance(clazz, field.getType());
         setField(field, object, fieldInstance);
         inject(fieldInstance);
@@ -103,6 +110,7 @@ public class CDIC {
             if (field.isAnnotationPresent(Inject.class)) {
 
                 if (field.isAnnotationPresent(Named.class)) {
+                    namedInjection(object, field);
                 } else {
                     Annotation[] annotations = field.getAnnotations();
                     boolean isQualifier = false;

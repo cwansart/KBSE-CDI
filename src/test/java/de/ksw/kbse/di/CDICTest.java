@@ -2,6 +2,7 @@ package de.ksw.kbse.di;
 
 import de.ksw.kbse.di.mocks.BarImpl;
 import de.ksw.kbse.di.mocks.Foo;
+import de.ksw.kbse.di.mocks.NamedClass;
 import de.ksw.kbse.di.mocks.QualifiedClass;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -56,8 +57,13 @@ public class CDICTest {
     @Test
     public void testIfTypeOfQualifiedField() {
         System.out.println("Test if Baz' qualified field qualifiedClass is of type QualifiedClass");
-        System.out.println("Type if qualifiedClass: " + foo.qualifiedClass.getClass().getName());
         assertTrue(foo.qualifiedClass instanceof QualifiedClass);
+    }
+    
+    @Test
+    public void testIfTypeOfNamedField() {
+        System.out.println("Test if Baz' named field namedClass is of type NamedClass");
+        assertTrue(foo.namedClass instanceof NamedClass);
     }
 
     @Test
