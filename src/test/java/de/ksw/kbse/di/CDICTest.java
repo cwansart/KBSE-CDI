@@ -1,5 +1,6 @@
 package de.ksw.kbse.di;
 
+import de.ksw.kbse.di.mocks.BarImpl;
 import de.ksw.kbse.di.mocks.Foo;
 import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
@@ -33,6 +34,21 @@ public class CDICTest {
         System.out.println("Test if Baz' field boo is not null (recursion test)");
         Foo foo = cdic.init(Foo.class);
         assertTrue(foo.baz.boo != null);
+    }
+    
+    @Test
+    public void testIfIFaceBarNotNull() {
+        System.out.println("Test if Baz' interface field bar is not null (recursion test)");
+        Foo foo = cdic.init(Foo.class);
+        System.out.println("foo.bar is: " + foo.bar);
+        assertTrue(foo.bar != null);
+    }
+    
+    @Test
+    public void testIfIFaceBarIsTypeOfBarImpl() {
+        System.out.println("Test if Baz' interface field bar is of type BarImpl");
+        Foo foo = cdic.init(Foo.class);
+        assertTrue(foo.bar instanceof BarImpl);
     }
 
     @Test

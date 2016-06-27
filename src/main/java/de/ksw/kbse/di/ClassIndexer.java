@@ -37,9 +37,9 @@ public class ClassIndexer {
     private final Map<String, ClassInfo> interfaceImplementations = new HashMap<>();
     private final Map<String, ClassInfo> namedImplementations = new HashMap<>();
     private final Map<String, ClassInfo> qualifierImplementations = new HashMap<>();
-    
+
     /**
-     * 
+     *
      */
     private String currentClassPath;
 
@@ -123,7 +123,7 @@ public class ClassIndexer {
             CtClass loadedClass = ClassPool.getDefault().makeClass(new FileInputStream(file));
             ClassFile classFile = loadedClass.getClassFile();
             AnnotationsAttribute attribute = (AnnotationsAttribute) classFile.getAttribute(AnnotationsAttribute.visibleTag);
-            
+
             if (attribute != null) {
                 processAnnotations(classFile, attribute, file);
             } else {
@@ -154,7 +154,7 @@ public class ClassIndexer {
                     throw new RuntimeException("Interface-Implementierung für " + iface + " ist nicht eindeutig!");
                 }
 
-                ClassInfo classInfo = new ClassInfo(iface, currentClassPath, file);
+                ClassInfo classInfo = new ClassInfo(classFile.getName(), currentClassPath, file);
                 interfaceImplementations.put(iface, classInfo);
             }
         }

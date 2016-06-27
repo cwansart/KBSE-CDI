@@ -28,6 +28,8 @@ public class CDIC {
 
     private void simpleInjection(Object object, Field field) {
         Object fieldInstance;
+        Class type;
+
         if (field.getType().isInterface()) {
             ClassInfo classInfo = classIndexer.getInterfaceFile(field.getType().getName());
 
@@ -35,55 +37,58 @@ public class CDIC {
                 URLClassLoader classLoader = new URLClassLoader(new URL[]{
                     new File(classInfo.getPath()).toURI().toURL()
                 });
-
-                Class clazz = classLoader.loadClass(classInfo.getName());
+                type = classLoader.loadClass(classInfo.getName());
             } catch (MalformedURLException ex) {
                 Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Class url stimmt nicht. Ggf. hat der ClassIndexer einen falschen Pfad!", ex);
+                return;
             } catch (ClassNotFoundException ex) {
                 Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Klasse konnte nicht gefunden werden!", ex);
-            }
-
-        } else {
-            try {
-                fieldInstance = field.getType().newInstance();
-            } catch (InstantiationException ex) {
-                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " besitzt keinen Default-Konstruktor!", ex);
                 return;
-            } catch (IllegalAccessException ex) {
-                try {//Prüfen ob getInstance verfügbar ist und wenn möglich aufrufen.
-                    Method getInstanceMethod = field.getType().getMethod("getInstance");
-                    fieldInstance = getInstanceMethod.invoke(object);
-                } catch (NoSuchMethodException ex1) {
-                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " besitzt keinen public Default-Konstruktor!", ex1);
-                    return;
-                } catch (SecurityException ex1) {
-                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex1);
-                    return;
-                } catch (IllegalAccessException ex1) {
-                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " getInstance() ist nicht public!", ex1);
-                    return;
-                } catch (IllegalArgumentException ex1) {
-                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " getInstance() benötigt zusätzliche Argumente", ex1);
-                    return;
-                } catch (InvocationTargetException ex1) {
-                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " getInstance() warf eine Exeption", ex1);
-                    return;
-                }
             }
-
-            try {
-                field.setAccessible(true);
-                field.set(object, fieldInstance);
-            } catch (IllegalArgumentException ex) {
-                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Feld " + field.getName() + " ist kein Objekt!", ex);
-            } catch (IllegalAccessException ex) {
-                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Feld " + field.getName() + " ist nicht zugreifbar!", ex);
-            } finally {
-                field.setAccessible(false);
-            }
-
-            inject(fieldInstance);
+        } else {
+            type = field.getType();
         }
+        
+        try {
+            fieldInstance = type.newInstance();
+        } catch (InstantiationException ex) {
+            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " besitzt keinen Default-Konstruktor!", ex);
+            return;
+        } catch (IllegalAccessException ex) {
+            try {//Prüfen ob getInstance verfügbar ist und wenn möglich aufrufen.
+                Method getInstanceMethod = field.getType().getMethod("getInstance");
+                fieldInstance = getInstanceMethod.invoke(object);
+            } catch (NoSuchMethodException ex1) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " besitzt keinen public Default-Konstruktor!", ex1);
+                return;
+            } catch (SecurityException ex1) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex1);
+                return;
+            } catch (IllegalAccessException ex1) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " getInstance() ist nicht public!", ex1);
+                return;
+            } catch (IllegalArgumentException ex1) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " getInstance() benötigt zusätzliche Argumente", ex1);
+                return;
+            } catch (InvocationTargetException ex1) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " getInstance() warf eine Exeption", ex1);
+                return;
+            }
+        }
+
+        try {
+            field.setAccessible(true);
+            field.set(object, fieldInstance);
+        } catch (IllegalArgumentException ex) {
+            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Feld " + field.getName() + " ist kein Objekt!", ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Feld " + field.getName() + " ist nicht zugreifbar!", ex);
+        } finally {
+            field.setAccessible(false);
+        }
+
+        inject(fieldInstance);
+
     }
 
     public <T> T init(Class clazz) {
