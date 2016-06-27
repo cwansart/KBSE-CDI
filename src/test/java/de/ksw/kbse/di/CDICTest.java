@@ -2,6 +2,7 @@ package de.ksw.kbse.di;
 
 import de.ksw.kbse.di.mocks.BarImpl;
 import de.ksw.kbse.di.mocks.Foo;
+import de.ksw.kbse.di.mocks.QualifiedClass;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -16,7 +17,7 @@ public class CDICTest {
     public static void setUpClass() {
         cdic = new CDIC();
     }
-    
+
     @Before
     public void setUp() {
         foo = cdic.init(Foo.class);
@@ -39,13 +40,13 @@ public class CDICTest {
         System.out.println("Test if Baz' field boo is not null (recursion test)");
         assertTrue(foo.baz.boo != null);
     }
-    
+
     @Test
     public void testIfIFaceBarNotNull() {
         System.out.println("Test if Baz' interface field bar is not null (recursion test)");
         assertTrue(foo.bar != null);
     }
-    
+
     @Test
     public void testIfIFaceBarIsTypeOfBarImpl() {
         System.out.println("Test if Baz' interface field bar is of type BarImpl");
@@ -53,11 +54,18 @@ public class CDICTest {
     }
 
     @Test
+    public void testIfTypeOfQualifiedField() {
+        System.out.println("Test if Baz' qualified field qualifiedClass is of type QualifiedClass");
+        System.out.println("Type if qualifiedClass: " + foo.qualifiedClass.getClass().getName());
+        assertTrue(foo.qualifiedClass instanceof QualifiedClass);
+    }
+
+    @Test
     public void testClassIndexer() {
         /*
         Das ist ein tempoäer Test. Wir sollten das später noch
         anpassen und den Test um entsprechende asserts erweitern.
-        */
+         */
         ClassIndexer classIndexer = new ClassIndexer(Foo.class);
         System.out.println(classIndexer);
     }

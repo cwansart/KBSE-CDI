@@ -45,12 +45,14 @@ public class CDIC {
     }
 
     private <T> void qualifierInjection(T object, Field field, Annotation annotation) {
-//        ClassInfo qualifierFile = classIndexer.getQualifierFile(annotation.annotationType().getTypeName());
-//        Class clazz = loadClass(qualifierFile);
-//        
-//        T fieldInstance = newInstance(clazz, field.getType());
-//        setField(field, object, fieldInstance);
-//        inject(fieldInstance);
+        ClassInfo qualifierFile = classIndexer.getQualifierFile(annotation.annotationType().getTypeName());
+        Class clazz = loadClass(qualifierFile);
+
+        T fieldInstance = newInstance(clazz, field.getType());
+        
+        System.out.println("QUALIFIED INSTANCE IS OF TYPE: " + fieldInstance.getClass().getName());
+        setField(field, object, fieldInstance);
+        //inject(fieldInstance);
     }
 
     private <T> T newInstance(Class clazz, Class fieldType) {
@@ -108,6 +110,7 @@ public class CDIC {
                     boolean isQualifier = false;
                     for (Annotation annotation : annotations) {
                         if (annotation.annotationType().isAnnotationPresent(Qualifier.class)) {
+                            isQualifier = true;
                             qualifierInjection(object, field, annotation);
                         }
                     }
@@ -122,8 +125,11 @@ public class CDIC {
         return object;
     }
 
-    private void setField(Field field, Object object, Object fieldInstance) throws SecurityException {
+    private <T> void setField(Field field, Object object, T fieldInstance) throws SecurityException {
         try {
+            System.out.println("FIELD: " + field.getName());
+            System.out.println("TYPE OF FIELDINSTANCE: " + fieldInstance.getClass().getName());
+            System.out.println();
             field.setAccessible(true);
             field.set(object, fieldInstance);
         } catch (IllegalArgumentException ex) {
