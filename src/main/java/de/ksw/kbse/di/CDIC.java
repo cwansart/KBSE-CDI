@@ -49,10 +49,8 @@ public class CDIC {
         Class clazz = loadClass(qualifierFile);
 
         T fieldInstance = newInstance(clazz, field.getType());
-        
-        System.out.println("QUALIFIED INSTANCE IS OF TYPE: " + fieldInstance.getClass().getName());
         setField(field, object, fieldInstance);
-        //inject(fieldInstance);
+        inject(fieldInstance);
     }
 
     private <T> T newInstance(Class clazz, Class fieldType) {
@@ -127,9 +125,6 @@ public class CDIC {
 
     private <T> void setField(Field field, Object object, T fieldInstance) throws SecurityException {
         try {
-            System.out.println("FIELD: " + field.getName());
-            System.out.println("TYPE OF FIELDINSTANCE: " + fieldInstance.getClass().getName());
-            System.out.println();
             field.setAccessible(true);
             field.set(object, fieldInstance);
         } catch (IllegalArgumentException ex) {
