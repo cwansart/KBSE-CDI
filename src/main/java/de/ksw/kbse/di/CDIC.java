@@ -6,6 +6,7 @@
 package de.ksw.kbse.di;
 
 import java.io.File;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -28,67 +29,51 @@ public class CDIC {
 
     private void simpleInjection(Object object, Field field) {
         Object fieldInstance;
-        Class type;
+        Class clazz;
 
         if (field.getType().isInterface()) {
             ClassInfo classInfo = classIndexer.getInterfaceFile(field.getType().getName());
-
-            try {
-                URLClassLoader classLoader = new URLClassLoader(new URL[]{
-                    new File(classInfo.getPath()).toURI().toURL()
-                });
-                type = classLoader.loadClass(classInfo.getName());
-            } catch (MalformedURLException ex) {
-                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Class url stimmt nicht. Ggf. hat der ClassIndexer einen falschen Pfad!", ex);
-                return;
-            } catch (ClassNotFoundException ex) {
-                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Klasse konnte nicht gefunden werden!", ex);
-                return;
-            }
+            clazz = loadClass(classInfo);
         } else {
-            type = field.getType();
-        }
-        
-        try {
-            fieldInstance = type.newInstance();
-        } catch (InstantiationException ex) {
-            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " besitzt keinen Default-Konstruktor!", ex);
-            return;
-        } catch (IllegalAccessException ex) {
-            try {//Prüfen ob getInstance verfügbar ist und wenn möglich aufrufen.
-                Method getInstanceMethod = field.getType().getMethod("getInstance");
-                fieldInstance = getInstanceMethod.invoke(object);
-            } catch (NoSuchMethodException ex1) {
-                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " besitzt keinen public Default-Konstruktor!", ex1);
-                return;
-            } catch (SecurityException ex1) {
-                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex1);
-                return;
-            } catch (IllegalAccessException ex1) {
-                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " getInstance() ist nicht public!", ex1);
-                return;
-            } catch (IllegalArgumentException ex1) {
-                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " getInstance() benötigt zusätzliche Argumente", ex1);
-                return;
-            } catch (InvocationTargetException ex1) {
-                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " getInstance() warf eine Exeption", ex1);
-                return;
-            }
+            clazz = field.getType();
         }
 
-        try {
-            field.setAccessible(true);
-            field.set(object, fieldInstance);
-        } catch (IllegalArgumentException ex) {
-            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Feld " + field.getName() + " ist kein Objekt!", ex);
-        } catch (IllegalAccessException ex) {
-            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Feld " + field.getName() + " ist nicht zugreifbar!", ex);
-        } finally {
-            field.setAccessible(false);
-        }
-
+        fieldInstance = newInstance(clazz, field.getType());
+        setField(field, object, fieldInstance);
         inject(fieldInstance);
 
+    }
+
+    private Object newInstance(Class clazz, Class fieldType) {
+        Object fieldInstance = null;
+        try {
+            fieldInstance = clazz.newInstance();
+        } catch (InstantiationException ex) {
+            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, fieldType.getName() + " besitzt keinen Default-Konstruktor!", ex);
+
+        } catch (IllegalAccessException ex) {
+            try {//Prüfen ob getInstance verfügbar ist und wenn möglich aufrufen.
+                Method getInstanceMethod = fieldType.getMethod("getInstance");
+                fieldInstance = getInstanceMethod.invoke(null);
+            } catch (NoSuchMethodException ex1) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, fieldType.getName() + " besitzt keinen public Default-Konstruktor!", ex1);
+            } catch (SecurityException ex1) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex1);
+            } catch (IllegalAccessException ex1) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, fieldType.getName() + " getInstance() ist nicht public!", ex1);
+            } catch (IllegalArgumentException ex1) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, fieldType.getName() + " getInstance() benötigt zusätzliche Argumente", ex1);
+            } catch (InvocationTargetException ex1) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, fieldType.getName() + " getInstance() warf eine Exeption", ex1);
+            }
+        }
+        return fieldInstance;
+    }
+
+    private <T> void qualifierInjection(T object, Field field, Annotation annotation) {
+        ClassInfo qualifierFile = classIndexer.getQualifierFile(annotation.annotationType().getTypeName());
+        Class type = loadClass(qualifierFile);
+        //inject(fieldInstance);
     }
 
     public <T> T init(Class clazz) {
@@ -113,16 +98,54 @@ public class CDIC {
         Field[] declaredFields = object.getClass().getDeclaredFields();
         for (Field field : declaredFields) {
             if (field.isAnnotationPresent(Inject.class)) {
+
                 if (field.isAnnotationPresent(Named.class)) {
-
-                } else if (field.isAnnotationPresent(Qualifier.class)) {
-
                 } else {
-                    simpleInjection(object, field);
+                    Annotation[] annotations = field.getAnnotations();
+                    boolean isQualifier = false;
+                    for (Annotation annotation : annotations) {
+                        if (annotation.annotationType().isAnnotationPresent(Qualifier.class)) {
+                            qualifierInjection(object, field, annotation);
+                        }
+                    }
+
+                    if (!isQualifier) {
+                        simpleInjection(object, field);
+                    }
                 }
             }
         }
 
         return object;
+    }
+
+    private void setField(Field field, Object object, Object fieldInstance) throws SecurityException {
+        try {
+            field.setAccessible(true);
+            field.set(object, fieldInstance);
+        } catch (IllegalArgumentException ex) {
+            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Feld " + field.getName() + " ist kein Objekt!", ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Feld " + field.getName() + " ist nicht zugreifbar!", ex);
+        } finally {
+            field.setAccessible(false);
+        }
+    }
+
+    private Class loadClass(ClassInfo classInfo) {
+        Class type = null;
+        try {
+            URLClassLoader classLoader = new URLClassLoader(new URL[]{
+                new File(classInfo.getPath()).toURI().toURL()
+            });
+            type = classLoader.loadClass(classInfo.getName());
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Class url stimmt nicht. Ggf. hat der ClassIndexer einen falschen Pfad!", ex);
+
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Klasse konnte nicht gefunden werden!", ex);
+
+        }
+        return type;
     }
 }
