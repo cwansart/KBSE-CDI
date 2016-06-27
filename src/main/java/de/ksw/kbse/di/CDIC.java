@@ -10,6 +10,8 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.inject.Inject;
@@ -48,10 +50,25 @@ public class CDIC {
                 Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " besitzt keinen Default-Konstruktor!", ex);
                 return;
             } catch (IllegalAccessException ex) {
-                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " besitzt keinen public Default-Konstruktor!", ex);
-                // Hier könnten wir noch prüfen ob das Objekt über eine
-                // getInstance() Methode verfügt und diese entsprechend aufrufen.
-                return;
+                try {//Prüfen ob getInstance verfügbar ist und wenn möglich aufrufen.
+                    Method getInstanceMethod = field.getType().getMethod("getInstance");
+                    fieldInstance = getInstanceMethod.invoke(object);
+                } catch (NoSuchMethodException ex1) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " besitzt keinen public Default-Konstruktor!", ex1);
+                    return;
+                } catch (SecurityException ex1) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex1);
+                    return;
+                } catch (IllegalAccessException ex1) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " getInstance() ist nicht public!", ex1);
+                    return;
+                } catch (IllegalArgumentException ex1) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " getInstance() benötigt zusätzliche Argumente", ex1);
+                    return;
+                } catch (InvocationTargetException ex1) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, field.getType().getName() + " getInstance() warf eine Exeption", ex1);
+                    return;
+                }
             }
 
             try {
