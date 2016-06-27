@@ -34,9 +34,14 @@ public class ClassIndexer {
     /*
      * Maps with the default implementations.
      */
-    private final Map<String, File> interfaceImplementations = new HashMap<>();
-    private final Map<String, File> namedImplementations = new HashMap<>();
-    private final Map<String, File> qualifierImplementations = new HashMap<>();
+    private final Map<String, ClassInfo> interfaceImplementations = new HashMap<>();
+    private final Map<String, ClassInfo> namedImplementations = new HashMap<>();
+    private final Map<String, ClassInfo> qualifierImplementations = new HashMap<>();
+    
+    /**
+     * 
+     */
+    private String currentClassPath;
 
     /**
      * Starts the indexing process.
@@ -83,6 +88,7 @@ public class ClassIndexer {
     private void searchInClassPath() {
         String[] classPaths = System.getProperty("java.class.path").split(";");
         for (String pathString : classPaths) {
+            currentClassPath = pathString;
             File path = new File(pathString);
             if (path.isDirectory()) {
                 searchInPath(path);
@@ -117,7 +123,7 @@ public class ClassIndexer {
             CtClass loadedClass = ClassPool.getDefault().makeClass(new FileInputStream(file));
             ClassFile classFile = loadedClass.getClassFile();
             AnnotationsAttribute attribute = (AnnotationsAttribute) classFile.getAttribute(AnnotationsAttribute.visibleTag);
-
+            
             if (attribute != null) {
                 processAnnotations(attribute, file);
             } else {
@@ -148,7 +154,8 @@ public class ClassIndexer {
                     throw new RuntimeException("Interface-Implementierung für " + iface + " ist nicht eindeutig!");
                 }
 
-                interfaceImplementations.put(iface, file);
+                ClassInfo classInfo = new ClassInfo(iface, currentClassPath, file);
+                interfaceImplementations.put(iface, classInfo);
             }
         }
     }
@@ -174,13 +181,15 @@ public class ClassIndexer {
                     throw new RuntimeException("Named-Implementierung für " + namedValue + " ist nicht eindeutig!");
                 }
                 if (namedInjectionPoints.contains(namedValue)) {
-                    namedImplementations.put(namedValue, file);
+                    ClassInfo classInfo = new ClassInfo(namedValue, currentClassPath, file);
+                    namedImplementations.put(namedValue, classInfo);
                 }
             } else if (qualifierInjectionPoints.contains(typeName)) {
                 if (qualifierImplementations.containsKey(typeName)) {
                     throw new RuntimeException("Qualifier-Implementierung für " + typeName + " ist nicht eindeutig!");
                 }
-                qualifierImplementations.put(typeName, file);
+                ClassInfo classInfo = new ClassInfo(typeName, currentClassPath, file);
+                qualifierImplementations.put(typeName, classInfo);
             }
         }
     }
@@ -192,7 +201,7 @@ public class ClassIndexer {
      * @param name given interface name
      * @return default implementation of the given interface
      */
-    public File getInterfaceFile(String name) {
+    public ClassInfo getInterfaceFile(String name) {
         return interfaceImplementations.get(name);
     }
 
@@ -203,7 +212,7 @@ public class ClassIndexer {
      * @param name given named qualifier
      * @return default implementation of the given named qualifier
      */
-    public File getNamedFile(String name) {
+    public ClassInfo getNamedFile(String name) {
         return namedImplementations.get(name);
     }
 
@@ -214,7 +223,7 @@ public class ClassIndexer {
      * @param name given qualifier
      * @return default implementation of the given qualifier
      */
-    public File qualifierFile(String name) {
+    public ClassInfo getQualifierFile(String name) {
         return qualifierImplementations.get(name);
     }
 
@@ -228,29 +237,29 @@ public class ClassIndexer {
         StringBuilder builder = new StringBuilder();
         builder.append("Named-Implementierngen: ")
                 .append(System.lineSeparator());
-        for (Map.Entry<String, File> entry : namedImplementations.entrySet()) {
+        for (Map.Entry<String, ClassInfo> entry : namedImplementations.entrySet()) {
             builder.append(entry.getKey())
                     .append(": ")
-                    .append(entry.getValue().getAbsoluteFile())
+                    .append(entry.getValue().getFile().getAbsoluteFile())
                     .append(System.lineSeparator());
         }
 
         builder.append(System.lineSeparator())
                 .append("Qualifier-Implementierngen: ")
                 .append(System.lineSeparator());
-        for (Map.Entry<String, File> entry : qualifierImplementations.entrySet()) {
+        for (Map.Entry<String, ClassInfo> entry : qualifierImplementations.entrySet()) {
             builder.append(entry.getKey())
                     .append(": ")
-                    .append(entry.getValue().getAbsoluteFile())
+                    .append(entry.getValue().getFile().getAbsoluteFile())
                     .append(System.lineSeparator());
         }
         builder.append(System.lineSeparator())
                 .append("Interface-Implementierngen: ")
                 .append(System.lineSeparator());
-        for (Map.Entry<String, File> entry : interfaceImplementations.entrySet()) {
+        for (Map.Entry<String, ClassInfo> entry : interfaceImplementations.entrySet()) {
             builder.append(entry.getKey())
                     .append(": ")
-                    .append(entry.getValue().getAbsoluteFile())
+                    .append(entry.getValue().getFile().getAbsoluteFile())
                     .append(System.lineSeparator());
         }
         return builder.toString();

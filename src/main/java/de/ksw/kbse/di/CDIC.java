@@ -5,7 +5,11 @@
  */
 package de.ksw.kbse.di;
 
+import java.io.File;
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.inject.Inject;
@@ -17,14 +21,26 @@ import javax.inject.Qualifier;
  * @author Larr
  */
 public class CDIC {
-    
+
     private ClassIndexer classIndexer;
 
-    private static void simpleInjection(Object object, Field field) {
+    private void simpleInjection(Object object, Field field) {
         Object fieldInstance;
         if (field.getType().isInterface()) {
-            // In ClassPath nach entsprechenden Implementierungen suchen
-            
+            ClassInfo classInfo = classIndexer.getInterfaceFile(field.getType().getName());
+
+            try {
+                URLClassLoader classLoader = new URLClassLoader(new URL[]{
+                    new File(classInfo.getPath()).toURI().toURL()
+                });
+
+                Class clazz = classLoader.loadClass(classInfo.getName());
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Class url stimmt nicht. Ggf. hat der ClassIndexer einen falschen Pfad!", ex);
+            } catch (ClassNotFoundException ex) {
+                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Klasse konnte nicht gefunden werden!", ex);
+            }
+
         } else {
             try {
                 fieldInstance = field.getType().newInstance();
@@ -55,7 +71,7 @@ public class CDIC {
 
     public <T> T init(Class clazz) {
         classIndexer = new ClassIndexer(clazz);
-        
+
         T object;
         try {
             object = (T) clazz.newInstance();
@@ -70,7 +86,7 @@ public class CDIC {
         return inject(object);
     }
 
-    private static <T> T inject(T object) throws SecurityException {
+    private <T> T inject(T object) throws SecurityException {
         // Prüfen ob Injection Points vorhanden sind und entsprechende Injections durchführen.
         Field[] declaredFields = object.getClass().getDeclaredFields();
         for (Field field : declaredFields) {
