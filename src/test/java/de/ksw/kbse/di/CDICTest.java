@@ -2,6 +2,7 @@ package de.ksw.kbse.di;
 
 import de.ksw.kbse.di.mocks.BarImpl;
 import de.ksw.kbse.di.mocks.Boo;
+import de.ksw.kbse.di.mocks.ConstructorInjectionWithQualifier;
 import de.ksw.kbse.di.mocks.Foo;
 import de.ksw.kbse.di.mocks.NamedClass;
 import de.ksw.kbse.di.mocks.QualifiedClass;
@@ -77,6 +78,18 @@ public class CDICTest {
     public void testConstrcutorInjection() {
         System.out.println("Test if Baa's constructor injection works");
         assertTrue(foo.baa.boo instanceof Boo);
+    }
+    
+    @Test
+    public void testConstructorInjectionWithQualifier() {
+        System.out.println("Test if qualifier injection on constructors work.");
+        assertTrue(foo.constructorInjectionWithQualifier.qualifiedClass instanceof QualifiedClass);
+    }
+    
+    @Test
+    public void testConstructorInjectionWithNamedQualifier() {
+        System.out.println("Test if named qualifier injection on constructors work.");
+        assertTrue(foo.constructorInjectionWithNamedQualifier.namedClass instanceof NamedClass);
     }
 
     @Test

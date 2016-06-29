@@ -30,4 +30,10 @@ public class Foo {
     @Inject
     @MyQualifier
     public Object qualifiedClass;
+    
+    @Inject
+    public ConstructorInjectionWithQualifier constructorInjectionWithQualifier;
+    
+    @Inject
+    public ConstructorInjectionWithNamedQualifier constructorInjectionWithNamedQualifier;
 }

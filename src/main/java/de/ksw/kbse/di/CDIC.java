@@ -116,7 +116,27 @@ public class CDIC {
                     Parameter[] parameters = constructor.getParameters();
                     Object[] params = new Object[constructor.getParameterCount()];
                     for (int i = 0; i < params.length; i++) {
-                        params[i] = parameters[i].getType().newInstance();
+                        Class parameterType;
+
+                        if (parameters[i].getType().isInterface()) {
+                            ClassInfo interfaceFile = classIndexer.getInterfaceFile(parameters[i].getType().getName());
+                            parameterType = loadClass(interfaceFile);
+                        } else if (parameters[i].getType().isAnnotationPresent(Named.class)) {
+                            Named annotation = parameters[i].getAnnotation(Named.class);
+                            ClassInfo namedFile = classIndexer.getNamedFile(annotation.value());
+                            parameterType = loadClass(namedFile);
+                        } else {
+                            Annotation[] annotations = parameters[i].getAnnotations();
+                            parameterType = parameters[i].getType();
+                            for (Annotation annotation : annotations) {
+                                if (annotation.annotationType().isAnnotationPresent(Qualifier.class)) {
+                                    ClassInfo qualifierFile = classIndexer.getQualifierFile(annotation.annotationType().getName());
+                                    parameterType = loadClass(qualifierFile);
+                                    break;
+                                }
+                            }
+                        }
+                        params[i] = parameterType.newInstance();
                     }
                     object = (T) constructor.newInstance(params);
                 } catch (InstantiationException ex) {
