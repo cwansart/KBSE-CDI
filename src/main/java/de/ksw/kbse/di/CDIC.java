@@ -187,13 +187,13 @@ public class CDIC {
                     }
                     object = (T) constructor.newInstance(params);
                 } catch (InstantiationException ex) {
-                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Das zu erzeugende Objekt ist Abstrakt!", ex);
                 } catch (IllegalAccessException ex) {
-                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Es existiert kein öffentlicher Konstruktor!", ex);
                 } catch (IllegalArgumentException ex) {
-                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Die übergebenen Parameter passen nicht überein!", ex);
                 } catch (InvocationTargetException ex) {
-                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Der Konstruktor warf eine Exception!", ex);
                 }
             }
         }
