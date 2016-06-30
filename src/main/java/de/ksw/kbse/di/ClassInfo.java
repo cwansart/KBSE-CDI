@@ -2,6 +2,11 @@ package de.ksw.kbse.di;
 
 import java.io.File;
 
+/**
+ * This is a helper class that holds information for classes.
+ *
+ * @author Christian Wansart
+ */
 public class ClassInfo {
 
     private final String name;

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.ksw.kbse.di;
 
 import java.io.File;
@@ -22,13 +17,23 @@ import javax.inject.Named;
 import javax.inject.Qualifier;
 
 /**
+ * Main class for the CDI container. You can initialize the container by calling
+ * the init method.
  *
- * @author Larr
+ * @author Florian Kruckmann
+ * @author Larissa Schenk
+ * @author Christian Wansart
  */
 public class CDIC {
 
     private ClassIndexer classIndexer;
 
+    /**
+     * Field injection with simple @Inject annotation.
+     *
+     * @param object the object to be injected
+     * @param field the field to be injected
+     */
     private <T> void simpleInjection(Object object, Field field) {
         Class clazz;
         if (field.getType().isInterface()) {
@@ -41,6 +46,13 @@ public class CDIC {
         injectField(clazz, field, object);
     }
 
+    /**
+     * Injects fields annotated with qualifiers.
+     *
+     * @param object the object to be injected
+     * @param field the field to be injected
+     * @param annotation the annotated qualifier
+     */
     private <T> void qualifierInjection(T object, Field field, Annotation annotation) {
         ClassInfo qualifierFile = classIndexer.getQualifierFile(annotation.annotationType().getTypeName());
         Class clazz = loadClass(qualifierFile);
@@ -48,6 +60,12 @@ public class CDIC {
         injectField(clazz, field, object);
     }
 
+    /**
+     * Injects named qualified fields.
+     *
+     * @param object the object to be injected
+     * @param field the field to be injected
+     */
     private <T> void namedInjection(T object, Field field) {
         Named annotation = field.getAnnotation(Named.class);
         ClassInfo namedFile = classIndexer.getNamedFile(annotation.value());
@@ -56,12 +74,29 @@ public class CDIC {
         injectField(clazz, field, object);
     }
 
-    private <T> void injectField(Class clazz, Field field, T object) throws SecurityException {
+    /**
+     * Sets the given object to the field and calls inject (recursion) on the
+     * new instance afterwards.
+     *
+     * @param clazz the class type that will be injected
+     * @param field the field that will be injected
+     * @param object the object that holds the field
+     */
+    private <T> void injectField(Class clazz, Field field, T object) {
         T fieldInstance = newInstance(clazz, field.getType());
         setField(field, object, fieldInstance);
         inject(fieldInstance);
     }
 
+    /**
+     * Creates a new instance of the given class. It also calls the constructor
+     * injection if it's not possible to create a new instance via default
+     * constructor.
+     *
+     * @param clazz the class for which the new instance will be created
+     * @param fieldType the field that will be injected
+     * @return the created object
+     */
     private <T> T newInstance(Class clazz, Class fieldType) {
         T fieldInstance = null;
         try {
@@ -88,6 +123,12 @@ public class CDIC {
         return fieldInstance;
     }
 
+    /**
+     * Entry point for the CDI container.
+     *
+     * @param clazz the class that will used for injection
+     * @return the created class
+     */
     public <T> T init(Class clazz) {
         classIndexer = new ClassIndexer(clazz);
 
@@ -107,6 +148,12 @@ public class CDIC {
         return inject(object);
     }
 
+    /**
+     * Performs constructor injection.
+     *
+     * @param clazz the class will be checked for constructor injection
+     * @return the created object by running the injected constructor
+     */
     public <T> T constructorInjection(Class clazz) {
         T object = null;
         Constructor[] constructors = clazz.getConstructors();
@@ -153,7 +200,13 @@ public class CDIC {
         return object;
     }
 
-    private <T> T inject(T object) throws SecurityException {
+    /**
+     * Recursive method for injection.
+     *
+     * @param object the object that will be created
+     * @return the created object
+     */
+    private <T> T inject(T object) {
         // Injecting fields
         Field[] declaredFields = object.getClass().getDeclaredFields();
         for (Field field : declaredFields) {
@@ -181,7 +234,14 @@ public class CDIC {
         return object;
     }
 
-    private <T> void setField(Field field, Object object, T fieldInstance) throws SecurityException {
+    /**
+     * Sets a field of the given object.
+     *
+     * @param field the field that will be set
+     * @param object the object that holds the field
+     * @param fieldInstance the object that will be set in the field
+     */
+    private <T> void setField(Field field, Object object, T fieldInstance) {
         try {
             field.setAccessible(true);
             field.set(object, fieldInstance);
@@ -194,6 +254,12 @@ public class CDIC {
         }
     }
 
+    /**
+     * Loads a class on runtime.
+     *
+     * @param classInfo class info for the class that will be loaded
+     * @return the loaded class
+     */
     private Class loadClass(ClassInfo classInfo) {
         Class type = null;
         try {
@@ -203,10 +269,8 @@ public class CDIC {
             type = classLoader.loadClass(classInfo.getName());
         } catch (MalformedURLException ex) {
             Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Class url stimmt nicht. Ggf. hat der ClassIndexer einen falschen Pfad!", ex);
-
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Klasse konnte nicht gefunden werden!", ex);
-
         }
         return type;
     }
