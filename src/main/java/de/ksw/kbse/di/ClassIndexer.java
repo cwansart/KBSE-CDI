@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,8 +51,12 @@ public class ClassIndexer {
      * @param clazz the class to be indexed
      */
     public ClassIndexer(Class clazz) {
-        index(clazz);
+        index(clazz);        
         searchInClassPath();
+
+        interfaceInjectionPoints.clear();
+        namedInjectionPoints.clear();
+        qualifierInjectionPoints.clear();
     }
 
     /**
@@ -58,26 +64,54 @@ public class ClassIndexer {
      *
      * @param clazz class file to search for injection points
      */
-    private void index(Class clazz) {
+    private void index(Class clazz) {        
         Field[] declaredFields = clazz.getDeclaredFields();
         for (Field field : declaredFields) {
             if (field.isAnnotationPresent(Inject.class)) {
-                if (field.getType().isInterface()) {
-                    interfaceInjectionPoints.add(field.getType().getName());
-                } else if (field.isAnnotationPresent(Named.class)) {
+                if (field.isAnnotationPresent(Named.class)) {
                     String namedValue = field.getAnnotation(Named.class).value();
                     namedInjectionPoints.add(namedValue);
                 } else {
+                    boolean isQualifier = false;
                     java.lang.annotation.Annotation[] annotations = field.getAnnotations();
                     for (java.lang.annotation.Annotation annotation : annotations) {
                         Class annotationType = annotation.annotationType();
                         if (annotationType.isAnnotationPresent(Qualifier.class)) {
+                            isQualifier = true;
                             qualifierInjectionPoints.add(annotationType.getName());
                         }
+                    }
+                    
+                    if(field.getType().isInterface() && !isQualifier) {
+                        interfaceInjectionPoints.add(field.getType().getName());
                     }
                 }
 
                 index(field.getType());
+            }
+        }
+
+        Constructor[] declaredConstructors = clazz.getDeclaredConstructors();
+        for (Constructor constructor : declaredConstructors) {
+            if (constructor.isAnnotationPresent(Inject.class)) {
+                Parameter[] parameters = constructor.getParameters();
+                for (Parameter parameter : parameters) {
+                    if (parameter.isAnnotationPresent(Named.class)) {
+                        String namedValue = parameter.getAnnotation(Named.class).value();
+                        namedInjectionPoints.add(namedValue);
+                    } else if (parameter.getType().isInterface()) {
+                        interfaceInjectionPoints.add(parameter.getType().getName());
+                    } else {
+                        java.lang.annotation.Annotation[] annotations = parameter.getAnnotations();
+                        for (java.lang.annotation.Annotation annotation : annotations) {
+                            if (annotation.annotationType().isAnnotationPresent(Qualifier.class)) {
+                                qualifierInjectionPoints.add(annotation.annotationType().getName());
+                            }
+                        }
+                    }
+                    
+                    index(parameter.getType());
+                }
             }
         }
     }
