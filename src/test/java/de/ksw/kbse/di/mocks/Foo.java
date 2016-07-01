@@ -36,4 +36,11 @@ public class Foo {
     
     @Inject
     public ConstructorInjectionWithNamedQualifier constructorInjectionWithNamedQualifier;
+    
+    public NamedClass nameOverMethod;
+    
+    @Inject
+    public void setBaaOverMethod(@Named("namedClass") NamedClass name){
+        this.nameOverMethod = name;
+    }
 }

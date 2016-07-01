@@ -101,4 +101,9 @@ public class CDICTest {
         ClassIndexer classIndexer = new ClassIndexer(Foo.class);
         System.out.println(classIndexer);
     }
+    @Test
+    public void testMethodInjection(){
+        System.out.println("Test if named qualifier injection on method injection work.");
+        assertTrue(foo.nameOverMethod instanceof NamedClass);
+    }
 }

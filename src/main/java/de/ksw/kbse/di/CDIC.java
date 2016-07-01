@@ -87,6 +87,59 @@ public class CDIC {
         setField(field, object, fieldInstance);
         inject(fieldInstance);
     }
+    
+    private <T> void methodInjection(T object) {
+        Method[] methods = object.getClass().getMethods();
+        for (Method method : methods) {
+            if (method.isAnnotationPresent(Inject.class)) {
+                try {
+                    Parameter[] parameters = method.getParameters();
+                    Object[] params = new Object[method.getParameterCount()];
+                    for (int i = 0; i < params.length; i++) {
+                        Class parameterType;
+
+                        if (parameters[i].getType().isInterface()) {
+                            ClassInfo interfaceFile = classIndexer.getInterfaceFile(parameters[i].getType().getName());
+                            parameterType = loadClass(interfaceFile);
+                        } else if (parameters[i].isAnnotationPresent(Named.class)) {
+                            Named annotation = parameters[i].getAnnotation(Named.class);
+                            ClassInfo namedFile = classIndexer.getNamedFile(annotation.value());
+                            if(namedFile == null){
+                                Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Konnte Klasse (" + annotation.value() +") nicht finden!");
+                                return;
+                            }
+                            parameterType = loadClass(namedFile);
+                        } else {
+                            Annotation[] annotations = parameters[i].getAnnotations();
+                            parameterType = parameters[i].getType();
+                            for (Annotation annotation : annotations) {
+                                if (annotation.annotationType().isAnnotationPresent(Qualifier.class)) {
+                                    ClassInfo qualifierFile = classIndexer.getQualifierFile(annotation.annotationType().getName());
+                                    if(qualifierFile == null){
+                                        Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, "Konnte Klasse (" + annotation.annotationType().getName() +") nicht finden!");
+                                        return;
+                                    }
+                                    parameterType = loadClass(qualifierFile);
+                                    break;
+                                }
+                            }
+                        }
+                        params[i] = parameterType.newInstance();
+                        inject(params[i]);
+                    }
+                    method.invoke(object, params);
+                } catch (IllegalAccessException ex) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IllegalArgumentException ex) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (InvocationTargetException ex) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (InstantiationException ex) {
+                    Logger.getLogger(CDIC.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+    }
 
     /**
      * Creates a new instance of the given class. It also calls the constructor
@@ -168,7 +221,7 @@ public class CDIC {
                         if (parameters[i].getType().isInterface()) {
                             ClassInfo interfaceFile = classIndexer.getInterfaceFile(parameters[i].getType().getName());
                             parameterType = loadClass(interfaceFile);
-                        } else if (parameters[i].getType().isAnnotationPresent(Named.class)) {
+                        } else if (parameters[i].isAnnotationPresent(Named.class)) {
                             Named annotation = parameters[i].getAnnotation(Named.class);
                             ClassInfo namedFile = classIndexer.getNamedFile(annotation.value());
                             parameterType = loadClass(namedFile);
@@ -230,7 +283,9 @@ public class CDIC {
                 }
             }
         }
-
+        
+        methodInjection(object);
+        
         return object;
     }
 
