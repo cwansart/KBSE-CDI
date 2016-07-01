@@ -120,7 +120,7 @@ public class ClassIndexer {
      * Searches inside the classpath for the indexed classes.
      */
     private void searchInClassPath() {
-        String[] classPaths = System.getProperty("java.class.path").split(";");
+        String[] classPaths = System.getProperty("java.class.path").split(File.pathSeparator);
         for (String pathString : classPaths) {
             currentClassPath = pathString;
             File path = new File(pathString);
