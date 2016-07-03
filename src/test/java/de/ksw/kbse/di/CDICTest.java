@@ -91,16 +91,7 @@ public class CDICTest {
         System.out.println("Test if named qualifier injection on constructors work.");
         assertTrue(foo.constructorInjectionWithNamedQualifier.namedClass instanceof NamedClass);
     }
-
-    @Test
-    public void testClassIndexer() {
-        /*
-        Das ist ein tempoäer Test. Wir sollten das später noch
-        anpassen und den Test um entsprechende asserts erweitern.
-         */
-        ClassIndexer classIndexer = new ClassIndexer(Foo.class);
-        System.out.println(classIndexer);
-    }
+    
     @Test
     public void testMethodInjection(){
         System.out.println("Test if named qualifier injection on method injection work.");
